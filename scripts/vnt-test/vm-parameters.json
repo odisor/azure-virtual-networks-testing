@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": ""
+    },
+    "virtualNetworkId": {
+      "value": ""
+    },
+    "subnetName": {
+        "value": ""
+    },
+    "virtualMachineRG": {
+      "value": ""
+    },
+    "virtualMachineName": {
+      "value": ""
+    },
+    "adminPassword": {
+        "reference": {
+          "keyVault": {
+              "id": "/subscriptions/d38aeb3d-c9f6-48b1-8223-fee8f298edd3/resourceGroups/ASP-GXUS-S-RGTS-S001/providers/Microsoft.KeyVault/vaults/ASP-GXUS-S-KVLT-S001"
+          },
+           "secretName": "QATestPasswd"
+        }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+trigger: none
+
+pool:
+  name: Azure Pipelines
+  vmImage: windows-latest
+
+parameters:
+- name: SubsIds
+  displayName: List of Subscription IDs to be tested
+  type: object
+  default: 
+  - 'Replace Your Subscription Names Here:-<space>Subscription Name'
+stages: 
+  - ${{ each thisSub in parameters.SubsIds }}:
+    - template: stages/vnt-testing.yml
+      parameters:
+       thisSubsName: ${{ thisSub }}
+       thisSubsSuffix: ${{ split(thisSub, '-')[3] }}

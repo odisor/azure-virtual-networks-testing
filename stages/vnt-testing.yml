@@ -1,0 +1,64 @@
+parameters:
+  - name: thisSubsName
+    displayName: Subscription Name
+    type: string
+  - name: thisSubsSuffix
+    displayName: Subscription Suffix
+    type: string
+
+stages:
+  - stage: AzGraph_${{ parameters.thisSubsSuffix }}
+    dependsOn: []
+    displayName: Discovering ${{ parameters.thisSubsName }}
+    jobs:
+    - job: query
+      displayName: AZ Graph Query
+      steps:
+      - task: AzurePowerShell@5
+        name: discovery
+        displayName: AZ Graph Query
+        inputs:
+         azureSubscription: $(ServiceConnection)
+         ScriptType: 'FilePath'
+         ScriptPath: '$(System.DefaultWorkingDirectory)\scripts\resource-discovery\Get-Resources.ps1'
+         workingDirectory: '$(System.DefaultWorkingDirectory)\scripts\resource-discovery'
+         ScriptArguments: '-subscriptionName ${{ parameters.thisSubsName }}'
+         azurePowerShellVersion: 'LatestVersion'
+      - powershell: |
+           $virtualNetworks = ('$(resources)' | ConvertFrom-Json).virtualNetworks | ConvertTo-Json -Compress
+           Write-Host "##vso[task.setvariable variable=virtualNetworks;isoutput=true]$virtualNetworks"
+        name: discovered
+        displayName: Setting VNets variable
+
+   
+  - stage: TestCases_${{ parameters.thisSubsSuffix }}
+    dependsOn: AzGraph_${{ parameters.thisSubsSuffix }}
+    displayName: Connectivity Test
+    jobs:
+    - job:
+      strategy:
+        maxParallel: 5
+        matrix: $[ stageDependencies.AzGraph_${{ parameters.thisSubsSuffix }}.query.outputs['discovered.virtualNetworks'] ]
+      steps:
+      - task: AzurePowerShell@5
+        name: VntTest
+        displayName: VNT Connectivity Test
+        condition: contains(variables['resourceId'], 'Microsoft.Network/virtualNetworks')
+        inputs:
+          azureSubscription: $(ServiceConnection)
+          ScriptType: 'FilePath'
+          ScriptPath: '$(System.DefaultWorkingDirectory)\scripts\vnt-test\Test-Vnt.ps1'
+          workingDirectory: '$(System.DefaultWorkingDirectory)\scripts\vnt-test'
+          ScriptArguments: '-vnetIdParam $(resourceId) -CIDRParam $(adressSpace)'
+          azurePowerShellVersion: 'LatestVersion'
+ 
+      - task: AzureFileCopy@5
+        name: Datalake
+        displayName: VNT Log Datalake Export
+        inputs:
+          SourcePath: '$(System.DefaultWorkingDirectory)\scripts\vnt-test\$(VnetLogFile)'
+          azureSubscription: $(ServiceConnection)
+          Destination: 'AzureBlob'
+          storage: 'aspgxusdtlks001'
+          ContainerName: 'tests'
+          BlobPrefix: 'vnt/'

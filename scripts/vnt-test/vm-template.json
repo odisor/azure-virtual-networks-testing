@@ -1,0 +1,162 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "String"
+        },
+        "virtualNetworkId": {
+            "type": "String"
+        },
+		"subnetName": {
+            "type": "String"
+        },
+        "virtualMachineRG": {
+            "type": "String"
+        },
+		"virtualMachineName": {
+			 "type": "String"
+	    },
+		"adminPassword": {
+		"type": "SecureString"
+	    },
+    },
+    "variables": {
+        "vnetId": "[parameters('virtualNetworkId')]",
+        "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]",
+		"networkInterfaceName": "[concat(parameters('virtualMachineName'), '-NIC1')]",
+		"enableAcceleratedNetworking": false,
+		"virtualMachineComputerName": "[parameters('virtualMachineName')]",
+		"virtualMachineSize": "Standard_D3_v2",
+		"osDiskType": "Standard_LRS",
+		"osDiskDeleteOption": "Delete",
+		"nicDeleteOption": "Detach",
+		"adminUsername": "Cloudadmin",
+		"patchMode": "AutomaticByOS",
+		"enableHotpatching": false
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2021-03-01",
+            "name": "[variables('networkInterfaceName')]",
+            "location": "[parameters('location')]",
+	    "tags": {
+		"ghs-environment": "Testing",
+		"ghs-dataclassification": "undefined",
+		"ghs-apptioid": "globalpwcit5",
+		"ghs-envid": "na",
+		"ghs-owner": "dylan.bright@pwc.com",
+		"ghs-deployedby": "portal",
+		"ghs-reserved5": "na",
+		"ghs-reserved2": "na",
+		"ghs-serviceoffering": "portal",
+		"ghs-srid": "na",
+		"ghs-appid": "na",
+		"ghs-los": "IFS",
+		"ghs-solutionexposure": "PwC Internal",
+		"ghs-reserved3": "na",
+		"ghs-reserved1": "na",
+		"ghs-solution": "na",
+		"ghs-reserved4": "na",
+		"ghs-tariff": "zae",
+		"ghs-environmenttype": "Testing"
+		},
+	    "dependsOn": [],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic"
+                        }
+                    }
+                ],
+                "enableAcceleratedNetworking": "[variables('enableAcceleratedNetworking')]"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-07-01",
+            "name": "[parameters('virtualMachineName')]",
+            "location": "[parameters('location')]",
+	    "tags": {
+		"ghs-environment": "Testing",
+		"ghs-dataclassification": "undefined",
+		"ghs-apptioid": "globalpwcit5",
+		"ghs-envid": "na",
+		"ghs-owner": "dylan.bright@pwc.com",
+		"ghs-deployedby": "portal",
+		"ghs-reserved5": "na",
+		"ghs-reserved2": "na",
+		"ghs-serviceoffering": "portal",
+		"ghs-srid": "na",
+		"ghs-appid": "na",
+		"ghs-los": "IFS",
+		"ghs-solutionexposure": "PwC Internal",
+		"ghs-reserved3": "na",
+		"ghs-reserved1": "na",
+		"ghs-solution": "na",
+		"ghs-reserved4": "na",
+		"ghs-tariff": "zae",
+		"ghs-environmenttype": "Testing"
+		},
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('virtualMachineSize')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('osDiskType')]"
+                        },
+                        "deleteOption": "[variables('osDiskDeleteOption')]"
+                    },
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2012-R2-Datacenter",
+                        "version": "latest"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]",
+                            "properties": {
+                                "deleteOption": "[variables('nicDeleteOption')]"
+                            }
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[variables('virtualMachineComputerName')]",
+                    "adminUsername": "[variables('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "enableAutomaticUpdates": true,
+                        "provisionVmAgent": true,
+                        "patchSettings": {
+                            "enableHotpatching": "[variables('enableHotpatching')]",
+                            "patchMode": "[variables('patchMode')]"
+                        }
+                    }
+                },
+                "licenseType": "Windows_Server"
+            }
+        }
+    ],
+    "outputs": {
+        "adminUsername": {
+            "type": "String",
+            "value": "[variables('adminUsername')]"
+        }
+    }
+}

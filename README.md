@@ -4,7 +4,6 @@
 
 #
 # Virtual Network Test Pipeline
-T# Virtual Network Test Pipeline
 
 This PoC demonstrates the implementation of [strategy:matrix](https://learn.microsoft.com/en-us/azure/devops/pipelines/yaml-schema/jobs-job-strategy?view=azure-pipelines#strategy-matrix-maxparallel) to generate a dynamic number of jobs based on a discovery process that runs a [Resource Graph query](https://learn.microsoft.com/en-us/azure/governance/resource-graph) in Azure.
 
@@ -34,7 +33,7 @@ stages:
 ## Discovering Stage
 
 It runs a powershell script that executes a Resource Graph query.
-The ouput of the script is json array, the final output is a dictionary containg all the VNTs information needed for the next stage to run the Azure Powershell Scripts:
+The output is a json dictionary containg all the VNTs information needed for the next stage to run the Azure Powershell Scripts:
 
 ```json
 {
